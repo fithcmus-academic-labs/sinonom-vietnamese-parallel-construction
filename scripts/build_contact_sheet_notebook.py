@@ -47,8 +47,8 @@ MAX_INLINE_SHEETS = 12          # flagged sheets auto-displayed in the notebook
 FOLDERS = ["ch", "vi", "misc"]
 COLOR = {"ch": (0, 0, 255), "vi": (255, 0, 0), "misc": (128, 128, 128)}   # BGR
 FLAG_COLOR = (0, 140, 255)      # orange, BGR
-OUTLIER_SIGMA = 2.0
-MIN_OUTLIER_DIFF = 5            # ignore count deviations smaller than this
+OUTLIER_SIGMA = 4.0
+MIN_OUTLIER_DIFF = 18            # calibrated to accommodate natural poem stanza variations and title pages
 TINY_AREA_FRAC = 2e-4           # box area / page area
 OVERLAP_IOU = 0.5
 
