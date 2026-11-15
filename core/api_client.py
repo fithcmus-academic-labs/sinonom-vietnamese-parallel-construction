@@ -249,3 +249,46 @@ class KimHanNomClient:
             "total_lines": len(lines),
             "lines": lines
         }
+
+    def ocr_preprocessed_layer(
+        self,
+        img_bgr,
+        book_title: str = "",
+        target_script: str = "ch",
+        is_vertical: bool = False
+    ) -> Dict[str, Any]:
+        """Preprocess image to isolate target script layer (removing grid lines and secondary ink)
+        and invoke KimHanNom Cloud OCR API on the clean layer image.
+        """
+        import tempfile
+        from core.preprocess import DocumentPreprocessor, cv2_imwrite_unicode
+
+        clean_layer = DocumentPreprocessor.synthesize_preprocessed_layer_image(
+            img_bgr, book_title=book_title, target_script=target_script
+        )
+        tmp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tf:
+                tmp_path = tf.name
+            cv2_imwrite_unicode(tmp_path, clean_layer)
+            srv_name = self.upload_image(tmp_path)
+            ocr_id = 1 if is_vertical else 4
+            read_dir = 1 if is_vertical else 2
+            ocr_data = self.ocr_image(
+                server_file_name=srv_name,
+                ocr_id=ocr_id,
+                lang_type=2,
+                reading_direction=read_dir
+            )
+            return {
+                "server_file_name": srv_name,
+                "result_bbox": ocr_data.get("result_bbox", []),
+                "result_ocr_text": ocr_data.get("result_ocr_text", [])
+            }
+        finally:
+            if tmp_path and os.path.exists(tmp_path):
+                try:
+                    os.remove(tmp_path)
+                except Exception:
+                    pass
+
