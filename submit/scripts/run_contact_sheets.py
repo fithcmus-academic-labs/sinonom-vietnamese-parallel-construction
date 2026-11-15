@@ -1,14 +1,18 @@
 import os
+import sys
 import re
 import json
-import cv2
-import numpy as np
-import pandas as pd
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 
+import cv2
+import numpy as np
+import pandas as pd
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from core.config import OUTPUT_DIR, DATASETS_MIDTERM_DIR
 SHEET_DIR = OUTPUT_DIR / "_contact_sheets"
 AUDIT_CSV = DATASETS_MIDTERM_DIR / "audit_dataset_summary.csv"

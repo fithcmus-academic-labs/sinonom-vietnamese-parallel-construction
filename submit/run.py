@@ -55,7 +55,12 @@ def execute_pipeline(book: str = "all", run_verification: bool = True):
         print("\n[BUOC 4/4] Tham dinh tinh hop le cua cac tep trong thu muc output/...")
         from scripts.verify_output import verify_book_output
         all_passed = True
-        if book == "all":
+        if book in ["all_catalog", "all_24", "all_books"]:
+            for d in sorted(OUTPUT_DIR.iterdir()):
+                if d.is_dir() and not d.name.startswith("_") and d.name not in ["csv", "xlsx"]:
+                    if not verify_book_output(d.name):
+                        all_passed = False
+        elif book == "all":
             for k in BOOKS.keys():
                 if not verify_book_output(k):
                     all_passed = False
@@ -111,7 +116,11 @@ def main():
 
     if args.verify_only:
         from scripts.verify_output import verify_book_output
-        if args.book == "all":
+        if args.book in ["all_catalog", "all_24", "all_books"]:
+            for d in sorted(OUTPUT_DIR.iterdir()):
+                if d.is_dir() and not d.name.startswith("_") and d.name not in ["csv", "xlsx"]:
+                    verify_book_output(d.name)
+        elif args.book == "all":
             for k in BOOKS.keys():
                 verify_book_output(k)
         else:

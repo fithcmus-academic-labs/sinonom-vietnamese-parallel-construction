@@ -7367,5 +7367,13 @@
         ]
       ]
     ]
+  },
+  "Ca Trù Thể Cách, Nôm_Y.052.jpg": {
+    "book": "Ca Trù Thể Cách, Nôm_Y",
+    "error": "Credentials missing: email and password are required. Configure them in .env file."
+  },
+  "ThoNomHoXuanHuongHoangXuanHanSuuTapVaGhiChu_HoXuanHuong.045.jpg": {
+    "book": "ThoNomHoXuanHuongHoangXuanHanSuuTapVaGhiChu_HoXuanHuong",
+    "error": "Credentials missing: email and password are required. Configure them in .env file."
   }
 }

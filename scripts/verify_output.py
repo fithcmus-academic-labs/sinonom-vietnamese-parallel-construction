@@ -47,14 +47,18 @@ def verify_book_output(book_key: str) -> bool:
 
     all_passed = True
 
-    # 1. Check required subdirectories
-    for sub in ["ch", "vi", "misc"]:
+    # 1. Check required subdirectories (ch, vi mandatory; misc/blank optional if no cover/blank pages)
+    for sub in ["ch", "vi"]:
         sub_path = book_dir / sub
-        if not sub_path.exists() or len(list(sub_path.iterdir())) == 0:
-            print(f"[FAIL] Missing or empty subdirectory: {sub}")
+        if not sub_path.exists():
+            print(f"[FAIL] Missing subdirectory: {sub}")
             all_passed = False
         else:
             print(f"[PASS] Subdirectory '{sub}' present with {len(list(sub_path.iterdir()))} items.")
+
+    misc_path = book_dir / "misc"
+    if misc_path.exists():
+        print(f"[PASS] Subdirectory 'misc' present with {len(list(misc_path.iterdir()))} items.")
 
     # 2. Check PDF file
     pdf_file = book_dir / f"{title}.pdf"

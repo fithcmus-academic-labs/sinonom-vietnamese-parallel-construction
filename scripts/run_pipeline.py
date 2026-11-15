@@ -211,21 +211,26 @@ def run_book_pipeline(book_key: str):
     print("=" * 80 + "\n")
     return True
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run Parallel Corpus Construction Pipeline")
-    parser.add_argument("--book", type=str, default="AB_160",
-                        help="Book to process: 'all' (primary 4 books), 'all_catalog' (all 23 books), or specific book key/title/filename")
-    args = parser.parse_args()
 
-    if args.book == "all":
+def run_pipeline(book: str = "all"):
+    """Run pipeline for a single book, primary books ('all'), or entire catalog ('all_catalog' / 'all_24')."""
+    if book in ["all", "primary"]:
         print(f"Running batch processing across primary books: {list(BOOKS.keys())}")
         for k in BOOKS.keys():
             run_book_pipeline(k)
-    elif args.book == "all_catalog":
+    elif book in ["all_catalog", "all_24", "all_books"]:
         pdf_dir = DATASETS_MIDTERM_DIR / "pdf"
         catalog_pdfs = sorted(list(pdf_dir.glob("*.pdf")))
         print(f"Running full catalog batch processing across {len(catalog_pdfs)} books...")
         for p in catalog_pdfs:
             run_book_pipeline(p.stem)
     else:
-        run_book_pipeline(args.book)
+        run_book_pipeline(book)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Run Parallel Corpus Construction Pipeline")
+    parser.add_argument("--book", type=str, default="all",
+                        help="Book to process: 'all' (primary 4 books), 'all_catalog' (all 24 books), or specific book key/title/filename")
+    args = parser.parse_args()
+    run_pipeline(args.book)

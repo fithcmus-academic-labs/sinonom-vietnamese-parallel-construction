@@ -27,12 +27,17 @@ import numpy as np
 import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-OUTPUT_DIR = PROJECT_ROOT / "output"
-DATASETS_DIR = PROJECT_ROOT / "datasets-midterm"
-CSV_DIR = DATASETS_DIR / "csv"
-API_CACHE_PATH = PROJECT_ROOT / "data" / "interim" / "api_preprocessed_cache.json"
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
-sys.path.insert(0, str(PROJECT_ROOT))
+from core.config import OUTPUT_DIR, DATASETS_MIDTERM_DIR, BASE_DIR
+
+DATASETS_DIR = DATASETS_MIDTERM_DIR
+CSV_DIR = DATASETS_MIDTERM_DIR / "csv"
+PDF_DIR = DATASETS_MIDTERM_DIR / "pdf"
+API_CACHE_PATH = BASE_DIR / "data" / "interim" / "api_preprocessed_cache.json"
+if not API_CACHE_PATH.exists() and (BASE_DIR.parent / "data" / "interim" / "api_preprocessed_cache.json").exists():
+    API_CACHE_PATH = BASE_DIR.parent / "data" / "interim" / "api_preprocessed_cache.json"
 from core.preprocess import (
     DocumentPreprocessor,
     cv2_imread_unicode,

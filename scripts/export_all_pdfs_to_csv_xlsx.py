@@ -17,12 +17,17 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-PDF_DIR = BASE_DIR / "datasets-midterm" / "pdf"
-DATASET_CSV_DIR = BASE_DIR / "datasets-midterm" / "csv"
-DATASET_XLSX_DIR = BASE_DIR / "datasets-midterm" / "xlsx"
-OUT_CSV_DIR = BASE_DIR / "output" / "csv"
-OUT_XLSX_DIR = BASE_DIR / "output" / "xlsx"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from core.config import OUTPUT_DIR, DATASETS_MIDTERM_DIR, PDF_DIR, BASE_DIR
+
+PDF_DIR = PDF_DIR
+DATASET_CSV_DIR = DATASETS_MIDTERM_DIR / "csv"
+DATASET_XLSX_DIR = DATASETS_MIDTERM_DIR / "xlsx"
+OUT_CSV_DIR = OUTPUT_DIR / "csv"
+OUT_XLSX_DIR = OUTPUT_DIR / "xlsx"
 DATASET_CSV_DIR.mkdir(parents=True, exist_ok=True)
 DATASET_XLSX_DIR.mkdir(parents=True, exist_ok=True)
 OUT_CSV_DIR.mkdir(parents=True, exist_ok=True)
@@ -346,11 +351,35 @@ def main():
         out_csv_path = OUT_CSV_DIR / f"{book_stem}.csv"
         out_xlsx_path = OUT_XLSX_DIR / f"{book_stem}.xlsx"
 
-        corpus_df.to_csv(out_csv_path, index=False, encoding="utf-8-sig")
-        write_styled_workbook(corpus_df, pages_df, out_xlsx_path)
+        required_cols = ["img_id", "sentence_id", "SinoNom_Char", "ChuQN_txt"]
+        for c in required_cols:
+            if c not in corpus_df.columns:
+                corpus_df[c] = ""
+        clean_csv_df = corpus_df[required_cols]
 
-        shutil.copy2(str(out_csv_path), str(DATASET_CSV_DIR / f"{book_stem}.csv"))
-        shutil.copy2(str(out_xlsx_path), str(DATASET_XLSX_DIR / f"{book_stem}.xlsx"))
+        clean_csv_df.to_csv(out_csv_path, index=False, encoding="utf-8-sig")
+        write_styled_workbook(clean_csv_df, pages_df, out_xlsx_path)
+
+        book_folder = OUTPUT_DIR / book_stem
+        primary_titles = [
+            "Ca Trù Thể Cách, Nôm_Y",
+            "Ca Trù Thê Cách, AB 160, Nôm_Y",
+            "Ca Trù Thế Cách, AB 431, Nôm_Y",
+            "Ca Trù Thế Cách, AB 456, Nôm_Y",
+        ]
+        if book_folder.is_dir() and book_stem not in primary_titles:
+            existing_csv = book_folder / f"{book_stem}.csv"
+            should_copy = True
+            if existing_csv.exists():
+                try:
+                    ex_df = pd.read_csv(existing_csv)
+                    if len(ex_df) > len(clean_csv_df) and list(ex_df.columns) == required_cols:
+                        should_copy = False
+                except Exception:
+                    pass
+            if should_copy:
+                shutil.copy2(str(out_csv_path), str(book_folder / f"{book_stem}.csv"))
+                shutil.copy2(str(out_xlsx_path), str(book_folder / f"{book_stem}.xlsx"))
 
         ch_count = int((pages_df["target_folder"].isin(["ch", "ch+vi"])).sum())
         vi_count = int((pages_df["target_folder"].isin(["vi", "ch+vi"])).sum())
@@ -374,8 +403,8 @@ def main():
         print(f"[{idx:02d}/23] Exported: {book_stem}.csv & .xlsx | Pages={len(pages_df)} (ch={ch_count}, vi={vi_count}, blank={blank_count}) | Rows={len(corpus_df)}")
 
     df_summary = pd.DataFrame(export_summary)
-    df_summary.to_csv(BASE_DIR / "output" / "index_23_books_export.csv", index=False, encoding="utf-8-sig")
-    df_summary.to_excel(BASE_DIR / "output" / "index_23_books_export.xlsx", index=False)
+    df_summary.to_csv(OUTPUT_DIR / "index_23_books_export.csv", index=False, encoding="utf-8-sig")
+    df_summary.to_excel(OUTPUT_DIR / "index_23_books_export.xlsx", index=False)
     print(f"\nCompleted exporting all {len(pdf_files)} PDFs to {OUT_CSV_DIR} and {OUT_XLSX_DIR}.")
 
 

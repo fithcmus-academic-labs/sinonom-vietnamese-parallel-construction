@@ -9,7 +9,7 @@ from core.config import OUTPUT_DIR
 
 def main():
     output_dir = OUTPUT_DIR
-    books = sorted([d for d in output_dir.iterdir() if d.is_dir() and not d.name.startswith("_")])
+    books = sorted([d for d in output_dir.iterdir() if d.is_dir() and not d.name.startswith("_") and d.name not in ["csv", "xlsx"]])
 
     print(f"{'Book':<38} | {'ch_b':>5} | {'vi_b':>5} | {'Max_H':>5} | {'>105':>4} | {'Avg_H':>5} | {'Max_IoU':>7}")
     print("-" * 80)
