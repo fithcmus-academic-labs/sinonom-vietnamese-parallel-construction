@@ -8,9 +8,10 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-OUTPUT_DIR = PROJECT_ROOT / "output"
+sys.path.insert(0, str(PROJECT_ROOT))
+from core.config import OUTPUT_DIR, DATASETS_MIDTERM_DIR
 SHEET_DIR = OUTPUT_DIR / "_contact_sheets"
-AUDIT_CSV = PROJECT_ROOT / "datasets-midterm" / "audit_dataset_summary.csv"
+AUDIT_CSV = DATASETS_MIDTERM_DIR / "audit_dataset_summary.csv"
 
 THUMB_W, THUMB_H = 300, 420
 COLS, ROWS = 6, 4

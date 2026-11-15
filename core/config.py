@@ -14,8 +14,26 @@ DATA_DIR = BASE_DIR / "data"
 RAW_DIR = DATA_DIR / "raw"
 DICTS_DIR = DATA_DIR / "dicts"
 INTERIM_DIR = DATA_DIR / "interim"
-OUTPUT_DIR = BASE_DIR / "output"
-DATASETS_MIDTERM_DIR = BASE_DIR / "datasets-midterm"
+
+def _resolve_dir(candidates, default):
+    for c in candidates:
+        if c.is_dir():
+            return c
+    return default
+
+OUTPUT_DIR = _resolve_dir(
+    [BASE_DIR / "output", Path.cwd() / "output", BASE_DIR.parent / "output", BASE_DIR.parent.parent / "output"],
+    BASE_DIR / "output",
+)
+DATASETS_MIDTERM_DIR = _resolve_dir(
+    [
+        BASE_DIR / "datasets-midterm",
+        Path.cwd() / "datasets-midterm",
+        BASE_DIR.parent / "datasets-midterm",
+        BASE_DIR.parent.parent / "datasets-midterm",
+    ],
+    BASE_DIR / "datasets-midterm",
+)
 PDF_DIR = DATASETS_MIDTERM_DIR / "pdf"
 
 # Files
