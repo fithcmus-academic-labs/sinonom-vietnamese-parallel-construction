@@ -17,12 +17,15 @@ INTERIM_DIR = DATA_DIR / "interim"
 
 def _resolve_dir(candidates, default):
     for c in candidates:
+        if c.is_dir() and any(c.iterdir()):
+            return c
+    for c in candidates:
         if c.is_dir():
             return c
     return default
 
 OUTPUT_DIR = _resolve_dir(
-    [BASE_DIR / "output", Path.cwd() / "output", BASE_DIR.parent / "output", BASE_DIR.parent.parent / "output"],
+    [BASE_DIR / "output", Path.cwd() / "output", BASE_DIR.parent / "output"],
     BASE_DIR / "output",
 )
 DATASETS_MIDTERM_DIR = _resolve_dir(
@@ -30,11 +33,23 @@ DATASETS_MIDTERM_DIR = _resolve_dir(
         BASE_DIR / "datasets-midterm",
         Path.cwd() / "datasets-midterm",
         BASE_DIR.parent / "datasets-midterm",
-        BASE_DIR.parent.parent / "datasets-midterm",
     ],
     BASE_DIR / "datasets-midterm",
 )
-PDF_DIR = DATASETS_MIDTERM_DIR / "pdf"
+PDF_DIR = _resolve_dir(
+    [
+        BASE_DIR / "datasets-midterm" / "pdf",
+        BASE_DIR / "pdf",
+        BASE_DIR / "input",
+        BASE_DIR.parent / "datasets-midterm" / "pdf",
+        BASE_DIR.parent / "pdf",
+        BASE_DIR.parent / "input",
+        Path.cwd() / "datasets-midterm" / "pdf",
+        Path.cwd() / "pdf",
+        Path.cwd() / "input",
+    ],
+    DATASETS_MIDTERM_DIR / "pdf",
+)
 
 # Files
 HANNOM_DICT_PKL = DICTS_DIR / "hannom_dict.pkl"
