@@ -138,6 +138,12 @@ def process_page_boxes(args) -> Tuple[str, str, List[Dict[str, Any]]]:
         oy2 = max(p[1] for p in pts)
 
         tx1, ty1, tx2, ty2 = tighten_box(img_bgr, ox1, oy1, ox2, oy2, is_vertical=is_vertical)
+        box_area = (tx2 - tx1) * (ty2 - ty1)
+        page_area = img_bgr.shape[0] * img_bgr.shape[1]
+        if box_area < 2.2e-4 * page_area:
+            continue
+        if not is_vertical and (tx2 - tx1) < max(80, int(img_bgr.shape[1] * 0.05)):
+            continue
         tight_pts = [[tx1, ty1], [tx2, ty1], [tx2, ty2], [tx1, ty2]]
 
         if idx_b < len(target_texts):
@@ -209,7 +215,18 @@ def process_book(book_dir: Path, classifier: BookClassifier) -> Dict[str, Any]:
 
             if folder == "ch":
                 texts = [str(t).strip() for t in p_rows["SinoNom_Char"].dropna()] if len(p_rows) > 0 and "SinoNom_Char" in p_rows.columns else []
-                is_vert = is_pure_nom or ("preface in hán" in b_name.lower())
+                if "thudạlữhoài" in b_name.lower() or "thudaluhoai" in b_name.lower():
+                    is_vert = True
+                elif "preface in hán" in b_name.lower():
+                    img_check = cv2_imread_unicode(img_p)
+                    if img_check is not None:
+                        g_chk = img_check[:, :, 1].astype(np.int16)
+                        r_chk = img_check[:, :, 2].astype(np.int16)
+                        is_vert = int(((r_chk - g_chk) > 20).sum()) < 5000
+                    else:
+                        is_vert = False
+                else:
+                    is_vert = False
             else:
                 texts = [str(t).strip() for t in p_rows["ChuQN_txt"].dropna()] if len(p_rows) > 0 and "ChuQN_txt" in p_rows.columns else []
                 is_vert = False

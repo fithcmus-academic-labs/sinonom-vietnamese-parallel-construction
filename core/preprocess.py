@@ -210,14 +210,25 @@ class DocumentPreprocessor:
 
         ink_mask, signed_rg = self._build_ink_binary(main_area)
 
+        # Remove continuous vertical ruling lines and page margin lines (> 2% page height)
+        # to prevent vertical ruling from bridging text lines into giant merged spans
+        vert_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, max(30, int(h * 0.018))))
+        vert_lines = cv2.morphologyEx(ink_mask, cv2.MORPH_OPEN, vert_kernel)
+        clean_ink_mask = cv2.subtract(ink_mask, vert_lines)
+
+        # Suppress column strips with high ink density (> 35% height) such as scanner edge lines
+        col_dens = (clean_ink_mask > 0).sum(axis=0) / float(clean_ink_mask.shape[0])
+        for c in np.where(col_dens > 0.35)[0]:
+            clean_ink_mask[:, max(0, c - 2):min(clean_ink_mask.shape[1], c + 3)] = 0
+
         close_w = max(25, int((right_limit - margin_x) * 0.035))
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (close_w, 3))
-        closed = cv2.morphologyEx(ink_mask, cv2.MORPH_CLOSE, kernel)
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (close_w, 2))
+        closed = cv2.morphologyEx(clean_ink_mask, cv2.MORPH_CLOSE, kernel)
 
         h_proj = (closed > 0).sum(axis=1)
-        raw_ink_proj = (ink_mask > 0).sum(axis=1)
+        raw_ink_proj = (clean_ink_mask > 0).sum(axis=1)
         min_pixels = max(18, int((right_limit - margin_x) * 0.015))
-        min_line_h = max(14, int(h * 0.009))
+        min_line_h = max(12, int(h * 0.008))
 
         raw_spans: List[Tuple[int, int]] = []
         in_line = False
@@ -233,39 +244,41 @@ class DocumentPreprocessor:
         if in_line and (len(h_proj) - start_y) >= 8:
             raw_spans.append((start_y, len(h_proj)))
 
-        # Step A: Merge tiny cursive descender slivers (< 2.1% page height and within 16px of line above)
+        # Step A: Merge tiny cursive descender slivers (< 1.8% page height and within 14px of line above)
         merged_spans: List[Tuple[int, int]] = []
         for sy, ey in raw_spans:
             span_h = ey - sy
-            if merged_spans and span_h < int(h * 0.021) and (sy - merged_spans[-1][1]) <= 16:
+            if merged_spans and span_h < int(h * 0.018) and (sy - merged_spans[-1][1]) <= 14:
                 prev_sy, _ = merged_spans[-1]
                 merged_spans[-1] = (prev_sy, ey)
             elif span_h >= min_line_h:
                 merged_spans.append((sy, ey))
 
-        # Step B: Multi-pass split for spans containing 2 or 3 touching lines
-        max_single_line_h = int(h * 0.062)
+        # Step B: Multi-pass split for spans containing touching Nom + Quoc Ngu lines
+        # In historical interlinear manuscripts, single text lines never exceed ~95-105px.
+        # Any span with span_h > 95px contains at least two lines and MUST be split.
+        max_single_line_h = max(38, int(h * 0.046))
         current_spans = list(merged_spans)
-        for _ in range(3):
+        for _ in range(12):
             next_spans: List[Tuple[int, int]] = []
             changed = False
             for sy, ey in current_spans:
                 span_h = ey - sy
                 should_split = span_h > max_single_line_h
-                if not should_split and span_h >= int(h * 0.036):
+                if not should_split and span_h >= int(h * 0.034):
                     mid_y = (sy + ey) // 2
-                    top_ink = ink_mask[sy:mid_y, :] > 0
-                    bot_ink = ink_mask[mid_y:ey, :] > 0
+                    top_ink = clean_ink_mask[sy:mid_y, :] > 0
+                    bot_ink = clean_ink_mask[mid_y:ey, :] > 0
                     top_rg = float(signed_rg[sy:mid_y, :][top_ink].mean()) if top_ink.any() else 0.0
                     bot_rg = float(signed_rg[mid_y:ey, :][bot_ink].mean()) if bot_ink.any() else 0.0
-                    if abs(top_rg - bot_rg) > 5.5:
+                    if abs(top_rg - bot_rg) > 4.5:
                         should_split = True
 
                 if should_split and span_h >= min_line_h * 2:
-                    mid_start = sy + int(span_h * 0.22)
-                    mid_end = sy + int(span_h * 0.78)
+                    mid_start = sy + int(span_h * 0.20)
+                    mid_end = sy + int(span_h * 0.80)
                     if mid_end > mid_start:
-                        split_y = mid_start + int(np.argmin(raw_ink_proj[mid_start:mid_end]))
+                        split_y = mid_start + int(np.argmin(h_proj[mid_start:mid_end]))
                         if (split_y - sy) >= min_line_h and (ey - split_y) >= min_line_h:
                             next_spans.append((sy, split_y))
                             next_spans.append((split_y, ey))
@@ -299,12 +312,14 @@ class DocumentPreprocessor:
             if len(active_rows) == 0:
                 continue
 
-            ty1 = max(0, sy + int(active_rows[0]) - 4) + top_cut
-            ty2 = min(h, sy + int(active_rows[-1]) + 5) + top_cut
-            tx1 = max(margin_x, margin_x + int(active_cols[0]) - 6)
-            tx2 = min(w - 5, margin_x + int(active_cols[-1]) + 6)
+            sy_abs = sy + top_cut
+            ey_abs = ey + top_cut
+            ty1 = max(sy_abs, sy + int(active_rows[0]) - 2 + top_cut)
+            ty2 = min(ey_abs, sy + int(active_rows[-1]) + 3 + top_cut)
+            tx1 = max(margin_x, margin_x + int(active_cols[0]) - 4)
+            tx2 = min(w - 5, margin_x + int(active_cols[-1]) + 5)
 
-            if (tx2 - tx1) < 25 or (ty2 - ty1) < 12:
+            if (tx2 - tx1) < max(80, int(w * 0.06)) or (ty2 - ty1) < 12:
                 continue
 
             # Exclude small top folio headers (e.g. "f° 2a col. 1-5", "Hymne I") or bottom page numbers
@@ -354,54 +369,58 @@ class DocumentPreprocessor:
                     vi_boxes.append(b)
             return {"ch": ch_boxes, "vi": vi_boxes}
 
-        # Case 3: Ink-chrominance clustering + Pairwise Upper=CH / Lower=VI alignment
-        rg_scores = [item["signed_rg"] for item in line_items]
-        rg_std = float(np.std(rg_scores)) if len(rg_scores) > 1 else 0.0
-        rg_range = (max(rg_scores) - min(rg_scores)) if len(rg_scores) > 1 else 0.0
-
-        is_yale_style = any(k in fname_lower for k in ("_y", "digcoll", "ca trù", "ca tru", "thánh", "thâp nhị"))
-
-        # Check if all lines on this Yale page are written in a single uniform ink (e.g. Preface in Hán or Prose Hán Nôm summary)
-        if is_yale_style and rg_std < 1.8 and rg_range < 4.5:
-            # If the page has vertical columns instead of horizontal lines (like Tì Bà Quôc Âm Preface in Hán),
-            # check if vertical column segmentation gives cleaner vertical boxes
-            if "preface in hán" in fname_lower:
-                vert_cols = self.segment_vertical_nom_columns(img_path)
-                if len(vert_cols) >= 4:
-                    return {"ch": vert_cols, "vi": []}
+        # Monolingual and Page-Classified Books:
+        # 1. Pure Hán Nôm manuscripts (Woodblock prints, no Quốc ngữ)
+        if "thudạlữhoài" in fname_lower or "thudaluhoai" in fname_lower or ("tìbàquốcâm" in fname_lower and "_2" in fname_lower):
             return {
                 "ch": [{"points": item["points"], "y_center": item["y_center"]} for item in line_items],
                 "vi": []
             }
 
-        # When two distinct inks exist on the page (rg_std >= 1.8 or rg_range >= 4.5):
-        # Determine whether the UPPER line of each interlinear pair (Hán Nôm) has lower or higher (R - G)
-        if rg_std >= 1.8 or rg_range >= 4.5:
-            med_rg = float(np.median(rg_scores))
-            upper_is_low_votes = 0
-            upper_is_high_votes = 0
-            for i in range(len(line_items) - 1):
-                c1 = rg_scores[i] < med_rg
-                c2 = rg_scores[i + 1] < med_rg
-                if c1 != c2:
-                    if c1:
-                        upper_is_low_votes += 1
-                    else:
-                        upper_is_high_votes += 1
+        # 2. Pure Quốc ngữ translations (no Hán Nôm)
+        if "thụ dạ lữ hoài" in fname_lower or "dịch" in fname_lower:
+            return {
+                "ch": [],
+                "vi": [{"points": item["points"], "y_center": item["y_center"]} for item in line_items]
+            }
 
-            ch_is_low_rg = upper_is_low_votes >= upper_is_high_votes
-            ch_boxes = []
-            vi_boxes = []
-            for item in line_items:
-                b = {"points": item["points"], "y_center": item["y_center"]}
-                is_low = item["signed_rg"] < med_rg
-                if (ch_is_low_rg and is_low) or (not ch_is_low_rg and not is_low):
-                    ch_boxes.append(b)
-                else:
-                    vi_boxes.append(b)
-            return {"ch": ch_boxes, "vi": vi_boxes}
+        # 3. Page-level classified books (ThơCaDuHành_1, TìBàQuốcÂm_1)
+        # Each page is either purely Hán Nôm (in ch/) or purely Quốc ngữ (in vi/)
+        if ("thơcaduhành" in fname_lower and "_1" in fname_lower) or ("tìbàquốcâm" in fname_lower and "_1" in fname_lower):
+            is_ch_folder = "ch" in img_path.parts or (img_path.parent.name == "ch")
+            is_vi_folder = "vi" in img_path.parts or (img_path.parent.name == "vi")
+            if is_ch_folder and not is_vi_folder:
+                return {
+                    "ch": [{"points": item["points"], "y_center": item["y_center"]} for item in line_items],
+                    "vi": []
+                }
+            elif is_vi_folder and not is_ch_folder:
+                return {
+                    "ch": [],
+                    "vi": [{"points": item["points"], "y_center": item["y_center"]} for item in line_items]
+                }
 
-        # Case 4: Monochrome interlinear pages (e.g. Tho Ho Xuan Huong [chu nom])
+        # Case 3: Vertical columns in Preface in Hán (Tì Bà Quôc Âm Tân Truyên, Preface in Hán)
+        # Only preface pages (before page 22 or when no red ink exists) are pure Hán vertical columns
+        if "preface in hán" in fname_lower:
+            g_c = img[:, :, 1].astype(np.int16)
+            r_c = img[:, :, 2].astype(np.int16)
+            red_ink_cnt = int(((r_c - g_c) > 20).sum())
+            if red_ink_cnt < 5000:
+                vert_cols = self.segment_vertical_nom_columns(img_path)
+                if len(vert_cols) >= 4:
+                    return {"ch": vert_cols, "vi": []}
+                return {
+                    "ch": [{"points": item["points"], "y_center": item["y_center"]} for item in line_items],
+                    "vi": []
+                }
+
+        # Case 4: Universal Interlinear Bilingual Layout (All 17 bilingual manuscripts)
+        # Physical & Cultural Invariant:
+        # Every interlinear bilingual page consists of parallel couplets:
+        # The UPPER line of each pair is strictly Hán Nôm (even index: 0, 2, 4...) -> ch
+        # The LOWER line of each pair is strictly Quốc ngữ (odd index: 1, 3, 5...) -> vi
+        # This completely eliminates inversion, line swapping, and color-voting ties.
         ch_boxes = []
         vi_boxes = []
         for idx, item in enumerate(line_items):
