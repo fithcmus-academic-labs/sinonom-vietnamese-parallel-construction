@@ -60,6 +60,12 @@ def verify_book_output(book_key: str) -> bool:
     if misc_path.exists():
         print(f"[PASS] Subdirectory 'misc' present with {len(list(misc_path.iterdir()))} items.")
 
+    # Check that no temporary or forbidden directories exist
+    for unwanted in ["extracted_all", "cache", "tmp"]:
+        if (book_dir / unwanted).exists():
+            print(f"[FAIL] Unwanted temporary directory found in submission: {unwanted}")
+            all_passed = False
+
     # 2. Check PDF file
     pdf_file = book_dir / f"{title}.pdf"
     if pdf_file.exists():

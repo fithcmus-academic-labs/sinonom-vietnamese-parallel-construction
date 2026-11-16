@@ -128,6 +128,9 @@ def run_book_pipeline(book_key: str):
     print(f"Classification: ch (Hán Nôm)={len(ch_images)}, vi (Quốc ngữ)={len(vi_images)}, misc (Phụ/Bìa/Trắng)={len(misc_images)}")
     total_conserved = len(set([x[1] for x in ch_images]).union([x[1] for x in vi_images]).union([x[1] for x in misc_images]))
     print(f"Page Conservation: {total_conserved}/{len(extracted_pages)} pages preserved ({100 * total_conserved / len(extracted_pages):.1f}%).")
+    
+    # Don dep thu muc tam thoi extracted_all sau khi da phan loai xong
+    preprocessor.cleanup_cache()
 
     # Copy original PDF to book directory
     shutil.copy2(str(pdf_path), str(book_out_dir / f"{title}.pdf"))
@@ -204,6 +207,9 @@ def run_book_pipeline(book_key: str):
 
     CorpusExporter.export_csv(aligned_records, out_csv)
     CorpusExporter.export_xlsx(aligned_records, eval_report["row_evaluations"], out_xlsx)
+
+    # Dam bao khong con thu muc tam thoi extracted_all ton tai trong thu muc sach
+    preprocessor.cleanup_cache()
 
     print("\n" + "=" * 80)
     print(f"PIPELINE COMPLETED SUCCESSFULLY FOR: {title}")
