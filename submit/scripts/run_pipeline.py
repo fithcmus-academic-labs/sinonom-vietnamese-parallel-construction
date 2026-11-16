@@ -213,17 +213,18 @@ def run_book_pipeline(book_key: str):
 
 
 def run_pipeline(book: str = "all"):
-    """Run pipeline for a single book, primary books ('all'), or entire catalog ('all_catalog' / 'all_24')."""
-    if book in ["all", "primary"]:
-        print(f"Running batch processing across primary books: {list(BOOKS.keys())}")
-        for k in BOOKS.keys():
-            run_book_pipeline(k)
-    elif book in ["all_catalog", "all_24", "all_books"]:
+    """Run pipeline for a single book, primary books ('primary' / 'ca_tru'), or entire 24-book catalog ('all' / 'all_catalog')."""
+    if book in ["all", "all_catalog", "all_24", "all_books"]:
         pdf_dir = DATASETS_MIDTERM_DIR / "pdf"
         catalog_pdfs = sorted(list(pdf_dir.glob("*.pdf")))
         print(f"Running full catalog batch processing across {len(catalog_pdfs)} books...")
-        for p in catalog_pdfs:
+        for i, p in enumerate(catalog_pdfs, 1):
+            print(f"\n>>> [{i:02d}/{len(catalog_pdfs)}] Processing book: {p.stem}")
             run_book_pipeline(p.stem)
+    elif book in ["primary", "ca_tru"]:
+        print(f"Running batch processing across primary books: {list(BOOKS.keys())}")
+        for k in BOOKS.keys():
+            run_book_pipeline(k)
     else:
         run_book_pipeline(book)
 

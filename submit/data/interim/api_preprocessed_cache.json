@@ -7375,5 +7375,25 @@
   "ThoNomHoXuanHuongHoangXuanHanSuuTapVaGhiChu_HoXuanHuong.045.jpg": {
     "book": "ThoNomHoXuanHuongHoangXuanHanSuuTapVaGhiChu_HoXuanHuong",
     "error": "Credentials missing: email and password are required. Configure them in .env file."
+  },
+  "Nhi thap tu hieu dien ca digcoll_35504_Y.045.jpg": {
+    "book": "Nhi thap tu hieu dien ca digcoll_35504_Y",
+    "error": "Credentials missing: email and password are required. Configure them in .env file."
+  },
+  "ThoNomHoXuanHuongHoangXuanHanSuuTapVaGhiChu_HoXuanHuong.039.jpg": {
+    "book": "ThoNomHoXuanHuongHoangXuanHanSuuTapVaGhiChu_HoXuanHuong",
+    "error": "Credentials missing: email and password are required. Configure them in .env file."
+  },
+  "ThuDạLữHoàiNgâm_秋夜旅懷吟.006.jpg": {
+    "book": "ThuDạLữHoàiNgâm_秋夜旅懷吟",
+    "error": "Credentials missing: email and password are required. Configure them in .env file."
+  },
+  "Thánh Tô Kê Diên Quôc Âm, Nôm.047.jpg": {
+    "book": "Thánh Tô Kê Diên Quôc Âm, Nôm",
+    "error": "Credentials missing: email and password are required. Configure them in .env file."
+  },
+  "Thư Thưc Tân Chuyên, Nôm_Y.034.jpg": {
+    "book": "Thư Thưc Tân Chuyên, Nôm_Y",
+    "error": "Credentials missing: email and password are required. Configure them in .env file."
   }
 }

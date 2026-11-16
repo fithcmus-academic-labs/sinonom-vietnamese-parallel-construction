@@ -26,12 +26,6 @@ from core.config import OUTPUT_DIR, DATASETS_MIDTERM_DIR, PDF_DIR, BASE_DIR
 PDF_DIR = PDF_DIR
 DATASET_CSV_DIR = DATASETS_MIDTERM_DIR / "csv"
 DATASET_XLSX_DIR = DATASETS_MIDTERM_DIR / "xlsx"
-OUT_CSV_DIR = OUTPUT_DIR / "csv"
-OUT_XLSX_DIR = OUTPUT_DIR / "xlsx"
-DATASET_CSV_DIR.mkdir(parents=True, exist_ok=True)
-DATASET_XLSX_DIR.mkdir(parents=True, exist_ok=True)
-OUT_CSV_DIR.mkdir(parents=True, exist_ok=True)
-OUT_XLSX_DIR.mkdir(parents=True, exist_ok=True)
 
 # Layout metadata for the 23 PDFs
 BOOK_LAYOUT_MAP = {
@@ -348,8 +342,15 @@ def main():
             corpus_df = pd.DataFrame(rows)
             status_tag = f"Structured Template ({len(corpus_df)} active pages)"
 
-        out_csv_path = OUT_CSV_DIR / f"{book_stem}.csv"
-        out_xlsx_path = OUT_XLSX_DIR / f"{book_stem}.xlsx"
+        book_folder = OUTPUT_DIR / book_stem
+        book_folder.mkdir(parents=True, exist_ok=True)
+
+        primary_titles = [
+            "Ca Trù Thể Cách, Nôm_Y",
+            "Ca Trù Thê Cách, AB 160, Nôm_Y",
+            "Ca Trù Thế Cách, AB 431, Nôm_Y",
+            "Ca Trù Thế Cách, AB 456, Nôm_Y",
+        ]
 
         required_cols = ["img_id", "sentence_id", "SinoNom_Char", "ChuQN_txt"]
         for c in required_cols:
@@ -357,29 +358,21 @@ def main():
                 corpus_df[c] = ""
         clean_csv_df = corpus_df[required_cols]
 
-        clean_csv_df.to_csv(out_csv_path, index=False, encoding="utf-8-sig")
-        write_styled_workbook(clean_csv_df, pages_df, out_xlsx_path)
+        out_csv_path = book_folder / f"{book_stem}.csv"
+        out_xlsx_path = book_folder / f"{book_stem}.xlsx"
 
-        book_folder = OUTPUT_DIR / book_stem
-        primary_titles = [
-            "Ca Trù Thể Cách, Nôm_Y",
-            "Ca Trù Thê Cách, AB 160, Nôm_Y",
-            "Ca Trù Thế Cách, AB 431, Nôm_Y",
-            "Ca Trù Thế Cách, AB 456, Nôm_Y",
-        ]
-        if book_folder.is_dir() and book_stem not in primary_titles:
-            existing_csv = book_folder / f"{book_stem}.csv"
-            should_copy = True
-            if existing_csv.exists():
-                try:
-                    ex_df = pd.read_csv(existing_csv)
-                    if len(ex_df) > len(clean_csv_df) and list(ex_df.columns) == required_cols:
-                        should_copy = False
-                except Exception:
-                    pass
-            if should_copy:
-                shutil.copy2(str(out_csv_path), str(book_folder / f"{book_stem}.csv"))
-                shutil.copy2(str(out_xlsx_path), str(book_folder / f"{book_stem}.xlsx"))
+        should_write = True
+        if book_stem in primary_titles and out_csv_path.exists():
+            try:
+                ex_df = pd.read_csv(out_csv_path)
+                if len(ex_df) > len(clean_csv_df) and list(ex_df.columns) == required_cols:
+                    should_write = False
+            except Exception:
+                pass
+
+        if should_write:
+            clean_csv_df.to_csv(out_csv_path, index=False, encoding="utf-8-sig")
+            write_styled_workbook(clean_csv_df, pages_df, out_xlsx_path)
 
         ch_count = int((pages_df["target_folder"].isin(["ch", "ch+vi"])).sum())
         vi_count = int((pages_df["target_folder"].isin(["vi", "ch+vi"])).sum())
@@ -397,15 +390,14 @@ def main():
             "Trang_misc": misc_count,
             "So_Dong_Corpus": len(corpus_df),
             "Trang_Thai_Du_Lieu": status_tag,
-            "File_CSV": f"output/csv/{book_stem}.csv",
-            "File_XLSX": f"output/xlsx/{book_stem}.xlsx"
+            "File_CSV": f"{book_stem}/{book_stem}.csv",
+            "File_XLSX": f"{book_stem}/{book_stem}.xlsx"
         })
-        print(f"[{idx:02d}/23] Exported: {book_stem}.csv & .xlsx | Pages={len(pages_df)} (ch={ch_count}, vi={vi_count}, blank={blank_count}) | Rows={len(corpus_df)}")
+        print(f"[{idx:02d}/24] Exported: {book_stem}.csv & .xlsx | Pages={len(pages_df)} (ch={ch_count}, vi={vi_count}, blank={blank_count}) | Rows={len(corpus_df)}")
 
     df_summary = pd.DataFrame(export_summary)
-    df_summary.to_csv(OUTPUT_DIR / "index_23_books_export.csv", index=False, encoding="utf-8-sig")
-    df_summary.to_excel(OUTPUT_DIR / "index_23_books_export.xlsx", index=False)
-    print(f"\nCompleted exporting all {len(pdf_files)} PDFs to {OUT_CSV_DIR} and {OUT_XLSX_DIR}.")
+    df_summary.to_csv(DATASETS_MIDTERM_DIR / "export_summary.csv", index=False, encoding="utf-8-sig")
+    print(f"\nCompleted exporting all {len(pdf_files)} PDFs.")
 
 
 if __name__ == "__main__":
