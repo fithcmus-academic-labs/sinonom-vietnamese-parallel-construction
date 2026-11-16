@@ -28,27 +28,41 @@ OUTPUT_DIR = _resolve_dir(
     [BASE_DIR / "output", Path.cwd() / "output", BASE_DIR.parent / "output"],
     BASE_DIR / "output",
 )
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+INPUT_DIR = _resolve_dir(
+    [
+        Path.cwd() / "input",
+        BASE_DIR / "input",
+        Path.cwd() / "uploaded_pdfs",
+        BASE_DIR / "uploaded_pdfs",
+        Path.cwd() / "datasets-midterm" / "pdf",
+        BASE_DIR / "datasets-midterm" / "pdf",
+        Path.cwd() / "pdf",
+        BASE_DIR / "pdf",
+    ],
+    Path.cwd() / "input",
+)
+INPUT_DIR.mkdir(parents=True, exist_ok=True)
+PDF_DIR = INPUT_DIR
+
 DATASETS_MIDTERM_DIR = _resolve_dir(
     [
         BASE_DIR / "datasets-midterm",
         Path.cwd() / "datasets-midterm",
         BASE_DIR.parent / "datasets-midterm",
     ],
-    BASE_DIR / "datasets-midterm",
+    BASE_DIR,
 )
-PDF_DIR = _resolve_dir(
+
+CSV_DIR = _resolve_dir(
     [
-        BASE_DIR / "datasets-midterm" / "pdf",
-        BASE_DIR / "pdf",
-        BASE_DIR / "input",
-        BASE_DIR.parent / "datasets-midterm" / "pdf",
-        BASE_DIR.parent / "pdf",
-        BASE_DIR.parent / "input",
-        Path.cwd() / "datasets-midterm" / "pdf",
-        Path.cwd() / "pdf",
-        Path.cwd() / "input",
+        Path.cwd() / "csv",
+        BASE_DIR / "csv",
+        Path.cwd() / "datasets-midterm" / "csv",
+        BASE_DIR / "datasets-midterm" / "csv",
     ],
-    DATASETS_MIDTERM_DIR / "pdf",
+    Path.cwd() / "csv",
 )
 
 # Files
