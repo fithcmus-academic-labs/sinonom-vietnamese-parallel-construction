@@ -221,9 +221,12 @@ output_status = widgets.Output()
 
 def discover_available_pdfs() -> List[Path]:
     \"\"\"Tự động quét các tệp PDF có sẵn trong các thư mục khả dụng.\"\"\"
+    # 1. Ưu tiên hàng đầu: các tệp trong thư mục input/
+    input_pdfs = list(INPUT_DIR.glob("*.pdf"))
+    if input_pdfs:
+        return sorted(input_pdfs, key=lambda x: x.name)
+
     candidates = []
-    # 1. Quét thư mục input/
-    candidates.extend(list(INPUT_DIR.glob("*.pdf")))
     # 2. Quét thư mục uploaded_pdfs/ nếu có
     if (WORKSPACE_DIR / "uploaded_pdfs").exists():
         candidates.extend(list((WORKSPACE_DIR / "uploaded_pdfs").glob("*.pdf")))
