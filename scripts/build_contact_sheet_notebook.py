@@ -15,7 +15,7 @@ MD_TITLE = """# Contact Sheets for Human QC: Bounding Boxes of All Books
 Reads `output/<Book>/{ch,vi,misc}/` and the PPOCRLabel `Label.txt` files (read-only) and produces:
 
 - `output/_contact_sheets/<Book>/sheet_NN.jpg`: paginated grids of page thumbnails with 4-point boxes
-  (**red** = `ch/` Han-Nom, **blue** = `vi/` Quoc ngu, **gray frame** = `misc/`, no boxes; **orange frame** = auto-flagged).
+  (**black** = `ch/` Han-Nom, **green** = `vi/` Quoc ngu, **gray frame** = `misc/`, no boxes; **red frame** = auto-flagged / outlier).
 - `output/_contact_sheets/qc_flags.csv`: one row per flagged page, with empty `reviewer_verdict` / `notes` columns to fill in.
 - `output/_contact_sheets/contact_sheets_index.html`: open in a browser to scroll through every book.
 
@@ -45,8 +45,8 @@ JPEG_QUALITY = 85
 MAX_INLINE_SHEETS = 12          # flagged sheets auto-displayed in the notebook
 
 FOLDERS = ["ch", "vi", "misc"]
-COLOR = {"ch": (0, 0, 255), "vi": (255, 0, 0), "misc": (128, 128, 128)}   # BGR
-FLAG_COLOR = (0, 140, 255)      # orange, BGR
+COLOR = {"ch": (25, 25, 25), "vi": (30, 180, 30), "misc": (128, 128, 128)}   # BGR: Den (Han Nom), Xanh (Quoc Ngu)
+FLAG_COLOR = (0, 0, 220)      # Do (Flagged / Outlier)
 OUTLIER_SIGMA = 4.0
 MIN_OUTLIER_DIFF = 18            # calibrated to accommodate natural poem stanza variations and title pages
 TINY_AREA_FRAC = 2e-4           # box area / page area
@@ -330,9 +330,9 @@ C_HTML_MD = "## 7. HTML index for browser review"
 
 C_HTML = '''parts = ["<!doctype html><meta charset='utf-8'><title>Contact sheets</title>",
          "<style>body{font-family:sans-serif;margin:16px}img{max-width:100%;border:1px solid #ccc;margin:4px 0}"
-         ".bad{color:#d2691e;font-weight:bold}</style><h1>Contact sheets for human QC</h1>",
-         "<p><b style='color:red'>red</b> = ch boxes, <b style='color:blue'>blue</b> = vi boxes, gray frame = misc, "
-         "<b class='bad'>orange frame = flagged</b>. Flag list: <a href='qc_flags.csv'>qc_flags.csv</a></p><ul>"]
+         ".bad{color:#dc0000;font-weight:bold}</style><h1>Contact sheets for human QC</h1>",
+         "<p><b style='color:#191919'>black</b> = ch boxes (Hán Nôm), <b style='color:#1eb41e'>green</b> = vi boxes (Quốc ngữ), gray frame = misc, "
+         "<b class='bad'>red frame = flagged / outlier</b>. Flag list: <a href='qc_flags.csv'>qc_flags.csv</a></p><ul>"]
 for s in book_stats:
     parts.append(f"<li><a href='#{html.escape(s['book'], quote=True)}'>{html.escape(s['book'])}</a>: "
                  f"{s['pages']} pages, {s['flagged']} flagged</li>")
