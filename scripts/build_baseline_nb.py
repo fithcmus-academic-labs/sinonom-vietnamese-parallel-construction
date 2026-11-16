@@ -304,7 +304,16 @@ display(widgets.VBox([
         widgets.VBox([widgets.HTML("<i>Nhấp để xác nhận danh sách:</i>"), btn_confirm])
     ]),
     output_status
-]))"""))
+]))
+
+# In thông tin nhận diện tệp trực tiếp để hiển thị rõ ràng trên mọi giao diện xem notebook
+initial_targets = resolve_target_pdfs()
+print(f"\\n[DANH SÁCH TỆP ĐẦU VÀO] Đã nhận diện {len(initial_targets)} tệp PDF sẵn sàng xử lý:")
+for idx, p in enumerate(initial_targets[:10], 1):
+    size_mb = p.stat().st_size / (1024 * 1024)
+    print(f"  {idx:02d}. {p.name} ({size_mb:.2f} MB)")
+if len(initial_targets) > 10:
+    print(f"  ... và thêm {len(initial_targets) - 10} tệp khác.")"""))
 
 # ==============================================================================
 # CELL 4: MARKDOWN & CODE - KIỂM TRA DỊCH VỤ KIMHANNOM API & TỪ ĐIỂN OFFLINE
@@ -750,13 +759,23 @@ def on_book_change(change):
 
 viewer_dropdown.observe(on_book_change)
 
-# Hiển thị trình tương tác và hiển thị ngay cuốn sách đầu tiên
+# Hiển thị trình tương tác Dropdown
 display(viewer_dropdown)
 display(viewer_output)
 
-# Tự động hiển thị ngay Contact Sheet của tác phẩm đầu tiên trong cell
+# Kết xuất trực tiếp hình ảnh Contact Sheet của tác phẩm đầu tiên ra ngoài cell
+# để lưu trữ cố định (embedded base64) hiển thị được trên mọi trình duyệt và GitHub
 if available_output_books:
-    display_contact_sheets_for_book(available_output_books[0])"""))
+    first_book = available_output_books[0]
+    print(f"\\n=== TRỰC QUAN HÓA CONTACT SHEETS MẪU CHO: {first_book} ===")
+    print("- Quy ước màu: [ĐEN: Ký tự Hán Nôm (ch)] | [XANH LÁ: Câu Quốc ngữ (vi)] | [ĐỎ: Outlier / Flag]")
+    sample_sheets = get_book_contact_sheets(first_book)
+    print(f"Tổng số Contact Sheets: {len(sample_sheets)} tấm (Hiển thị 2 tấm mẫu trực tiếp bên dưới):\\n")
+    for idx, sheet_img in enumerate(sample_sheets[:2], 1):
+        ok, buf = cv2.imencode(".jpg", sheet_img, [cv2.IMWRITE_JPEG_QUALITY, 85])
+        if ok:
+            print(f"--- Contact Sheet #{idx:02d} [{sheet_img.shape[1]}x{sheet_img.shape[0]} px] ---")
+            display(IPImage(data=buf.tobytes(), width=950))"""))
 
 # ==============================================================================
 # SAVE JUPYTER NOTEBOOK FORMAT
