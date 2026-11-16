@@ -23,8 +23,8 @@ CAPTION_H = 22
 JPEG_QUALITY = 85
 
 FOLDERS = ["ch", "vi", "misc"]
-COLOR = {"ch": (0, 0, 255), "vi": (255, 0, 0), "misc": (128, 128, 128)}
-FLAG_COLOR = (0, 140, 255)
+COLOR = {"ch": (25, 25, 25), "vi": (30, 180, 30), "misc": (128, 128, 128)}
+FLAG_COLOR = (0, 0, 220)
 OUTLIER_SIGMA = 4.0
 MIN_OUTLIER_DIFF = 18
 TINY_AREA_FRAC = 2e-4
